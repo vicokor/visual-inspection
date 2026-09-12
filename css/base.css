@@ -1,0 +1,532 @@
+/* 基础变量、页面布局、上传区、通用按钮与基础控件 */
+:root {
+    --primary-color: #171717;
+    --primary-hover: #36393e;
+    --secondary-color: #718096;
+    --success-color: #80c808;
+    --warning-color: #D69E2E;
+    --danger-color: #f34242;
+    --light-bg: #f5f6fa;
+    --card-bg: #FFFFFF;
+    --sidebar-bg: #f9fafb;
+    --border-color: #E2E8F0;
+    --text-primary: #171717;
+    --text-secondary: #4A5568;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+}
+
+textarea {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+textarea::placeholder {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    Font-weight: normal;
+    color: rgba(0,0,0,0.25);
+}
+
+button i {
+    font-size: 20px;
+}
+
+button:focus,
+button:focus-visible {
+    Outline: none;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background-color: #191c29;
+    color: var(--text-primary);
+    /* line-height: 1.6; */
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    height: 100dvh;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
+    /* background-color: #000; */
+}
+
+/* 把视窗和滑杆打包的容器 */
+.canvas-container {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    /* border: 1px solid var(--border-color); */
+    border-radius: 6px;
+    /* background-color: #f8f9fa; */
+}
+
+/* 左侧栏样式 */
+.left-sidebar {
+    width: 350px;
+    /* background-color: var(--sidebar-bg); */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    overflow-y: auto;
+    /* border-right: 1px solid var(--border-color); */
+}
+
+/* 中间区域样式 */
+.main-content {
+    order: 1;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    /* background-color: #edf2f7; */
+    padding: 16px 0 16px 16px;
+    overflow: hidden;
+}
+
+.right-sidebar {
+    order: 2;
+    position: relative;
+    width: 360px;
+    overflow-y: hidden;  /* 改为hidden，让内部处理滚动 */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+/* 卡片通用样式 */
+.card {
+    background-color: var(--card-bg);
+    border-radius: 20px;
+    padding: 16px;
+    /* box-shadow: var(--shadow-sm); */
+    /* border: 1px solid var(--border-color); */
+}
+
+.card h3 {
+    color: var(--text-primary);
+    /* margin-bottom: 16px; */
+    Height: 24px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card h3 i {
+    color: var(--primary-color);
+}
+
+/* 上传模块样式 */
+.upload-module {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 开始按钮 */
+.start-btn {
+    width: 200px;
+    height: 40px;
+}
+
+.upload-area {
+    width: 290px;
+    height: 390px;
+    border: 2px dashed var(--border-color);
+    border-radius: 24px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-area:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(43, 108, 176, 0.05);
+    transform: translateY(-2px);
+}
+
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.upload-placeholder i {
+    font-size: 32px;
+    color: var(--secondary-color);
+}
+
+.upload-placeholder p {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.upload-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.preview-container {
+    display: none;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.preview-container.active {
+    display: block;
+}
+
+.preview-image {
+    position: relative;
+    display: inline-flex;        /* 改为 inline-flex，宽度自适应内容 */
+    justify-content: center;
+    align-items: center;
+    max-height: 150px;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);  /* 投影在容器上 */
+}
+
+.preview-image img {
+    max-height: 150px;           /* 限制最大高度 */
+    width: auto;                 /* 宽度自适应 */
+    height: auto;                /* 高度自适应 */
+    display: block;
+    border-radius: 8px;          /* 图片圆角 */
+}
+
+.image-info {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.image-info .filename {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 操作控制模块样式 */
+.control-module {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 叠加透明度控制组 */
+.control-group {
+    position: absolute;
+    bottom: 18px;
+    left: 80px;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+}
+
+.opacity-control {
+    /* display: none; */
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    display: flex;
+}
+
+.opacity-control.active {
+    /* display: flex; */
+    visibility: visible;
+    opacity: 1;
+}
+
+.control-group label {
+    font-weight: 400;
+    font-size: 14px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mode-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mode-btn {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.mode-btn:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(43, 108, 176, 0.05);
+}
+
+.mode-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* 叠加值滑块样式 - 完整版 */
+#opacity-slider {
+  flex: 1;
+  width: 100px;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border-color);
+  border-radius: 3px;
+  outline: none;
+}
+
+/* WebKit 浏览器 (Chrome, Safari, Edge) - 滑块轨道 */
+#opacity-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+/* WebKit 浏览器 - 滑块按钮 */
+#opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  margin-top: -7px; /* 垂直居中 */
+}
+
+#opacity-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: var(--primary-hover);
+}
+
+/* Firefox 浏览器 - 滑块轨道 */
+#opacity-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+/* Firefox 浏览器 - 滑块按钮 */
+#opacity-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+#opacity-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  background: var(--primary-hover);
+}
+
+/* Firefox 浏览器 - 进度条填充（可选） */
+#opacity-slider::-moz-range-progress {
+  background: var(--primary-color);
+  height: 6px;
+  border-radius: 3px;
+}
+
+/* 移除聚焦时的默认轮廓 */
+#opacity-slider:focus {
+  outline: none;
+}
+
+#opacity-slider:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.3);
+}
+
+/* 滑块容器样式优化 */
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height:40px;
+}
+
+#opacity-value {
+  min-width: 45px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  padding: 4px 0px;
+}
+
+.width-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.width-btn {
+    /* padding: 8px; */
+    height: 40px;
+    border: 1px solid var(--border-color);
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.width-btn:hover {
+    border-color: var(--primary-color);
+}
+
+.width-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.custom-width {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.custom-width input {
+    flex: 1;
+    height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.custom-width input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.unit {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* 按钮样式 */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.btn-primary, .btn-secondary, .btn-danger {
+    padding: 0px 12px;
+    height: 44px;
+    border: none;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.btn-primary {
+    background-color: #a0ed1e;
+    color: #171717;
+    height: 44px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #8eda0d;
+    transform: scale(1.05);
+    color: #171717;
+}
+
+.btn-primary:disabled {
+    background-color: var(--border-color);
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.btn-secondary {
+    background-color: var(--primary-color);
+    color: #FFF;
+}
+
+.btn-secondary:disabled {
+    background-color: var(--border-color);
+    cursor: not-allowed;
+    color: #171717;
+    opacity: 0.4;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    transform: scale(1.05);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:disabled {
+    background-color: var(--danger-color);
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #e53f3f;
+    transform: scale(1.05);
+}

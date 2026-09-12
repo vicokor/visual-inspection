@@ -1,0 +1,297 @@
+        /* 新增右侧悬浮工具条 (Drawing Toolbar) - 完全符合原需求样式，且不破坏原有结构 */
+        .canvas-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 6px;
+        }
+
+        .drawing-toolbar {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            background: #FFFFFF;
+            /* border: 1px solid #E2E8F0; */
+            border-radius: 48px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 0;
+            gap: 12px;
+            z-index: 20;
+            transition: all 0.2s ease;
+        }
+
+        /* 工具按钮样式 - 参考 zoom-controls 圆形设计，宽高40 */
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            color: #4A5568;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .tool-btn i {
+            font-size: 20px;
+            color: #171717;
+        }
+
+        .tool-btn:hover {
+            background-color: #f5f6fa;
+            border-color: #171717;
+            color: #171717;
+            transform: translateY(-1px);
+        }
+
+        .tool-btn.active {
+            background-color: #171717;
+            border-color: #171717;
+        }
+
+        .tool-btn.active i {
+            color: #FFFFFF;
+        }
+
+/* 移除工具栏按钮的聚焦边框 */
+.drawing-toolbar .tool-btn:focus,
+.drawing-toolbar .tool-btn:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+        /* 竖向滑杆容器 (高80px，参考offset-slider样式竖向) */
+        .vertical-slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 80px;
+            margin: 4px 0;
+            position: relative;
+            width: 100%;
+        }
+
+/* 竖向滑杆 - 使用标准垂直滑块方案 */
+.vertical-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 6px;
+    height: 80px;
+    background: #e3e8ef;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    writing-mode: vertical-lr;
+    direction: rtl;
+}
+
+.vertical-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #000;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+}
+
+.vertical-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    background: #000;
+}
+
+.vertical-slider::-moz-range-track {
+    background: #e3e8ef;
+    height: 6px;
+    border-radius: 3px;
+}
+
+.vertical-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    background: #000;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.vertical-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    background: #2563eb;
+}
+
+        /* 颜色选择器容器 */
+        .color-picker-wrapper {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            margin-top: 4px;
+        }
+
+        .color-preview {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #ff4d4f;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .color-preview:hover {
+            transform: scale(1.05);
+            border-color: #171717;
+        }
+
+        #stroke-color-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 32px;
+            height: 32px;
+            opacity: 0;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .tool-divider {
+            width: 28px;
+            height: 1px;
+            background-color: #E2E8F0;
+            margin: 4px 0;
+        }
+
+        .slider-value-badge {
+            font-size: 10px;
+            margin-top: 4px;
+            color: #4A5568;
+            font-weight: 500;
+            background-color: #f0f2f5;
+            padding: 2px 6px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        @media (max-width: 900px) {
+            .drawing-toolbar {
+                transform: translateY(-50%) scale(0.9);
+                right: 8px;
+            }
+        }
+
+.smart-annotation-size-cursor {
+    --size-cursor-color: #111111;
+    --brush-dot-size: 2px;
+    --eraser-diameter: 12px;
+    position: fixed;
+    z-index: 100;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 100ms ease;
+}
+
+.smart-annotation-size-cursor-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.smart-annotation-size-cursor.cursor-pen .smart-annotation-size-cursor-dot {
+    width: var(--brush-dot-size);
+    height: var(--brush-dot-size);
+    min-width: 3px;
+    min-height: 3px;
+    border-radius: 50%;
+    background: var(--size-cursor-color);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+}
+
+.smart-annotation-size-cursor.cursor-eraser {
+    width: var(--eraser-diameter);
+    height: var(--eraser-diameter);
+}
+
+.smart-annotation-size-cursor.cursor-eraser .smart-annotation-size-cursor-dot {
+    width: 100%;
+    height: 100%;
+    border: 1.5px solid #111111;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
+}
+
+.smart-annotation-size-cursor.visible {
+    opacity: 1;
+}
+
+.smart-annotation-size-cursor-label {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: rgba(17, 24, 39, 0.88);
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+    display: none;
+}
+
+.smart-annotation-size-cursor.with-label .smart-annotation-size-cursor-label {
+    display: block;
+}
+
+.smart-annotation-tool-cursor {
+    --tool-cursor-color: #ff4d4f;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    color: var(--tool-cursor-color);
+    font-size: 22px;
+    line-height: 1;
+    transform: translate(-5px, -18px);
+    filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 80ms ease;
+}
+
+.smart-annotation-tool-cursor.visible {
+    opacity: 1;
+}
+
+.size-cursor-active #plugin-canvas,
+.tool-cursor-active #plugin-canvas {
+    cursor: none !important;
+}
+
+.canvas-wrapper.shift-offset-ready #plugin-canvas {
+    cursor: grab !important;
+}
+
+.canvas-wrapper.shift-offset-dragging #plugin-canvas {
+    cursor: grabbing !important;
+}

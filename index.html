@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视检工具</title>
+
+    <script src="js/app-version.js"></script>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/Toolbar.css">
+    <link rel="stylesheet" href="css/iconFonts.css">
+
+    <!-- 应用模块：按数据层 → 核心层 → 功能层 → 入口顺序加载 -->
+    <script src="js/core/history-storage.js"></script>
+    <script src="js/core/inspection-tool-core.js"></script>
+    <script src="js/features/history-feature.js"></script>
+    <script src="js/features/comparison-feature.js"></script>
+    <script src="js/features/long-screenshot-feature.js"></script>
+    <script src="js/features/annotation-feature.js"></script>
+    <script src="js/features/ruler-feature.js"></script>
+    <script src="js/features/export-feature.js"></script>
+    <script src="js/ai-inspection/visual-semantic-parser.js"></script>
+    <script src="js/ai-inspection/semantic-matcher.js"></script>
+    <script src="js/ai-inspection/style-evaluator.js"></script>
+    <script src="js/ai-inspection/annotation-policy.js"></script>
+    <script src="js/ai-inspection/local-registration.js"></script>
+    <script src="js/ai-inspection/ai-inspection-engine.js"></script>
+    <script src="js/features/ai-inspection-feature.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/exportPDF/html2canvas.min.js"></script>
+    <script src="js/exportPDF/jspdf.umd.min.js"></script>
+    <script src="js/SmartAnnotation/smart-annotation.js"></script>
+    <script src="js/SmartAnnotation/Toolbar.js"></script>
+
+</head>
+<body>
+<div class="app-container">
+
+    <!-- 历史侧边栏（初始隐藏） -->
+    <div class="history-sidebar" id="history-sidebar">
+        <div class="history-sidebar-header">
+            <h3>历史记录</h3>
+            <button id="history-close" class="history-close">
+                <i class="icon x"></i>
+            </button>
+        </div>
+
+        <div class="history-sidebar-content" id="history-content">
+            <!-- 动态加载历史记录分组 -->
+            <div class="history-empty">
+                <i class="icon ufo"></i>
+                <p>暂无历史记录</p>
+            </div>
+        </div>
+
+        <div class="history-sidebar-footer">
+            <button id="clear-history" class="btn-secondary" style="width: 100%;">
+                <i class="icon trash"></i> 清空视检记录
+            </button>
+        </div>
+    </div>
+
+
+
+    <!-- 右侧标注区域 -->
+    <div class="right-sidebar">
+
+            <div class="annotations-list" id="annotations-list">
+                <div class="empty-annotations">
+                    <i class="icon ufo"></i>
+                    <p>暂无标注</p>
+                </div>
+            </div>
+
+            <div class="clear-all-annotation" >
+                    <button id="clear-all" class="clear-all-btn btn-danger" disabled>
+                        <i class="icon trash"></i>
+                    </button>
+            </div>
+    </div>
+
+
+    <!-- 主视检区域-->
+    <div class="main-content">
+
+        <div class="inspection-area card">
+
+    <!-- ========== 🆕 控制导航栏 ========== -->
+    <div class="control-nav">
+        <!-- 左边：按钮 + 基准宽度选择器 -->
+        <div class="control-left">
+            <button class="nav-btn" id="menu-toggle-btn" title="历史记录">
+                <i class="icon history"></i>
+            </button>
+            <div class="width-selector" id="width-selector">
+                <button class="selector-trigger" id="width-selector-trigger">
+                    <span>基准宽度</span>
+                    <i class="icon direction"></i>
+                </button>
+                <div class="selector-dropdown" id="width-dropdown">
+                    <div class="dropdown-item" data-width="375">375px</div>
+                    <div class="dropdown-item" data-width="390">390px</div>
+                    <div class="dropdown-item" data-width="1280">1280px</div>
+                    <div class="dropdown-item" data-width="1440">1440px</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item custom-width-item" id="custom-width-item">
+                        <i class="icon pencil"></i> 自定义
+                    </div>
+                </div>
+            </div>
+
+                <div class="toggle-switch">
+                    <input type="checkbox" id="annotation-toggle">
+                    <label for="annotation-toggle">
+                        <span class="toggle-label">标注(R)</span>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+        </div>
+
+<!-- 中间：模式选择器（滑杆/叠加/反相）- 带滑块效果 -->
+<div class="control-center">
+    <div class="mode-selector" id="mode-selector">
+        <div class="mode-slider-bg" id="mode-slider-bg">
+            <div class="mode-slider-thumb" id="mode-slider-thumb"></div>
+        </div>
+        <button class="mode-option active" data-mode="side-by-side">
+            <i class="icon layout-cards"></i> 左右
+        </button>
+        <button class="mode-option" data-mode="slider">
+            <i class="icon arrow-bar-both"></i> 滑杆
+        </button>
+        <button class="mode-option" data-mode="overlay">
+            <i class="icon stack-forward"></i> 叠加
+        </button>
+        <button class="mode-option" data-mode="invert">
+            <i class="icon brightness"></i> 反相
+        </button>
+    </div>
+</div>
+
+        <!-- 保存 + 导出PDF -->
+        <div class="control-right">
+                <button id="save-state" class="btn-secondary" disabled>
+                    <i class="icon download"></i> 保存
+                </button>
+                    <button id="export-pdf" class="btn-primary" disabled>
+                        <i class="icon file-type-pdf"></i>导出
+                    </button>
+        </div>
+    </div>
+
+            <div class="inspection-view" id="inspection-view">
+
+<!-- 空视检状态 -->
+<div class="empty-state" id="empty-state">
+    <div class="empty-upload-row">
+            <div class="upload-area" id="design-upload">
+                <div class="upload-placeholder">
+                    <i class="icon tools"></i>
+                    <p>设计图</p>
+                    <span class="upload-hint">点击或拖拽上传图片</span>
+                </div>
+                <input type="file" id="design-input" accept=".png,.jpg,.jpeg,.webp" hidden>
+                <div class="preview-container" id="design-preview"></div>
+            </div>
+            <div class="upload-area" id="dev-upload">
+                <div class="upload-placeholder">
+                    <i class="icon photo-code"></i>
+                    <p>开发图</p>
+                    <span class="upload-hint">点击或拖拽上传图片</span>
+                </div>
+                <input type="file" id="dev-input" accept=".png,.jpg,.jpeg,.webp" hidden>
+                <div class="preview-container" id="dev-preview"></div>
+                <label class="long-screenshot-upload-option" for="dev-long-screenshot-toggle">
+                    <input type="checkbox" id="dev-long-screenshot-toggle">
+                    <span class="long-screenshot-checkbox"></span>
+                    <span>长截图拼接</span>
+                </label>
+            </div>
+    </div>
+                <button id="start-inspection" class="start-btn btn-primary" disabled>
+                    <i class="icon pointer-2"></i> 开始视检(S)
+                </button>
+</div>
+
+                <div class="comparison-container" id="comparison-container" style="display: none;">
+
+                    <!-- Canvas对比区域 -->
+                    <div class="canvas-container">
+                        <!-- 添加 plugin-canvas -->
+                        <div class="canvas-wrapper" id="canvas-wrapper">
+                            <canvas id="design-canvas"></canvas>
+                            <canvas id="dev-canvas"></canvas>
+                            <canvas id="annotation-canvas"></canvas>
+                            <canvas id="plugin-canvas"></canvas>
+                            <canvas id="ruler-canvas" aria-hidden="true"></canvas>
+                            <div class="slider-handle" id="slider-handle">
+                                <div class="slider-handle-bg">
+                                    <i class="icon arrows-horizontal"></i>
+                                </div>
+                            </div>
+                            <button class="long-screenshot-adjust-btn" id="long-screenshot-adjust-btn"
+                                    type="button" hidden>
+                                调整长截图
+                            </button>
+                        </div>
+
+                        <!-- 静态工具栏 (绘图工具组)  -->
+                        <div class="drawing-toolbar" id="drawing-toolbar">
+                            <!-- 画笔工具 -->
+                            <button class="tool-btn" id="tool-pen" title="画笔">
+                                <i class="icon sketching"></i>
+                            </button>
+                            <!-- 箭头工具 -->
+                            <button class="tool-btn" id="tool-arrow" title="箭头">
+                                <i class="icon arrow-narrow-left"></i>
+                            </button>
+                            <!-- 矩形工具 -->
+                            <button class="tool-btn" id="tool-rect" title="矩形">
+                                <i class="icon screenshot"></i>
+                            </button>
+                            <!-- 文字工具 -->
+                            <button class="tool-btn" id="tool-text" title="文字">
+                                <i class="icon text-resize"></i>
+                            </button>
+                            <!-- 橡皮擦工具 -->
+                            <button class="tool-btn" id="tool-eraser" title="橡皮擦">
+                                <i class="icon eraser"></i>
+                            </button>
+
+                            <div class="tool-divider"></div>
+
+                            <!-- 竖向滑杆 -->
+                            <div class="vertical-slider-container">
+                                <input type="range" class="vertical-slider" id="stroke-width-slider" min="1" max="10" value="2" orient="vertical">
+                            </div>
+
+                            <!-- 颜色选择器 (圆形按钮) -->
+                            <div class="color-picker-wrapper">
+                                <div class="color-preview" id="color-preview" style="background-color: #ff4d4f;"></div>
+                                <input type="color" id="stroke-color-input" value="#ff4d4f">
+                            </div>
+                        </div>
+                        <!-- 工具栏结束 -->
+                    </div>
+
+                    <!-- 缩放控制 -->
+                    <div class="zoom-controls">
+                        <button id="zoom-in"><i class="icon zoom-in"></i></button>
+                        <span id="zoom-level">100%</span>
+                        <button id="zoom-out"><i class="icon zoom-out"></i></button>
+                        <!-- <button id="reset-zoom"><i class="fa-solid fa-rotate-left"></i></button> -->
+                        <button id="offset-toggle" title="垂直偏移">
+                            <i class="icon fold"></i>
+                        </button>
+                        <div class="toggle-visibility" id="toggle-visibility" style="display: none;">
+                            <i class="icon eye-edit"></i>
+                        </div>
+                    </div>
+
+            <!-- 叠加透明度控制 -->
+            <div class="control-group opacity-control" id="opacity-control">
+                <label>叠加值</label>
+                <div class="slider-container">
+                    <input type="range" id="opacity-slider" min="0" max="100" value="50">
+                    <span id="opacity-value">50%</span>
+                </div>
+            </div>
+
+    <!-- 🆕 左下角图片替换按钮 -->
+    <div class="image-replace-btn" id="image-replace-btn">
+        <i class="icon photo-edit"></i>
+    </div>
+
+    <button class="ai-settings-btn" id="ai-settings-btn" type="button"
+            title="AI 视检设置" aria-label="AI 视检设置" aria-pressed="true">
+        <i class="icon wand"></i>
+    </button>
+
+    <!-- 🆕 图片替换浮层菜单 -->
+    <div class="image-replace-menu" id="image-replace-menu">
+        <div class="menu-header">
+            <span>替换图片</span>
+            <button class="menu-close" id="image-replace-close">
+                <i class="icon x"></i>
+            </button>
+        </div>
+        <div class="upload-area-compact" id="design-upload-compact">
+            <div class="compact-placeholder">
+                <i class="icon tools"></i>
+                <p>设计图</p>
+            </div>
+            <div class="preview-compact" id="design-preview-compact"></div>
+        </div>
+        <div class="upload-area-compact" id="dev-upload-compact">
+            <div class="compact-placeholder">
+                <i class="icon photo-code"></i>
+                <p>开发图</p>
+            </div>
+            <div class="preview-compact" id="dev-preview-compact"></div>
+            <label class="long-screenshot-upload-option compact" for="dev-long-screenshot-toggle-compact">
+                <input type="checkbox" id="dev-long-screenshot-toggle-compact">
+                <span class="long-screenshot-checkbox"></span>
+                <span>长截图拼接</span>
+            </label>
+        </div>
+        <button id="start-inspection-compact" class="start-btn btn-primary" disabled>
+            更新图片
+        </button>
+    </div>
+
+    <div class="ai-settings-panel" id="ai-settings-panel" aria-label="AI 视检设置">
+        <div class="menu-header ai-settings-header">
+            <span>AI 视检设置</span>
+            <div class="ai-settings-header-actions">
+                <button class="menu-close ai-reset-settings" id="ai-reset-settings" type="button"
+                        title="恢复默认设置" aria-label="恢复默认设置">
+                    <i class="icon reload"></i>
+                </button>
+                <button class="menu-close" id="ai-settings-close" type="button" aria-label="关闭">
+                    <i class="icon x"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="ai-settings-scroll">
+            <div class="ai-settings-section">
+                <p class="ai-settings-section-title">运行设置</p>
+                <div class="ai-setting-row">
+                    <div class="ai-setting-copy">
+                        <span>自动检测</span>
+                        <small>开始视检后自动分析</small>
+                    </div>
+                    <label class="ai-switch">
+                        <input type="checkbox" data-ai-setting="autoDetect">
+                        <span class="ai-switch-track"></span>
+                    </label>
+                </div>
+                <div class="ai-setting-row">
+                    <div class="ai-setting-copy">
+                        <span>显示 AI 标注</span>
+                        <small>仅控制显示，不清除结果</small>
+                    </div>
+                    <label class="ai-switch">
+                        <input type="checkbox" data-ai-setting="showAIAnnotations">
+                        <span class="ai-switch-track"></span>
+                    </label>
+                </div>
+                <div class="ai-sensitivity-row">
+                    <div class="ai-sensitivity-labels">
+                        <span>检测灵敏度</span>
+                        <strong id="ai-sensitivity-value">标准</strong>
+                    </div>
+                    <input id="ai-sensitivity" type="range" min="1" max="5" value="3" step="1"
+                           aria-label="检测灵敏度" aria-describedby="ai-tolerance-hint">
+                    <div class="ai-scale-labels"><span>宽松</span><span>较宽松</span><span>标准</span><span>较严格</span><span>严格</span></div>
+                    <p class="ai-tolerance-hint" id="ai-tolerance-hint">位置容差 2px · 按基准宽度计算</p>
+                </div>
+            </div>
+
+            <div class="ai-settings-section">
+                <p class="ai-settings-section-title">智能忽略</p>
+                <div class="ai-setting-row">
+                    <div class="ai-setting-copy">
+                        <span>忽略内容差异</span>
+                        <small>仅忽略文案字段，仍检查文字样式</small>
+                    </div>
+                    <label class="ai-switch">
+                        <input type="checkbox" data-ai-setting="ignoreContent">
+                        <span class="ai-switch-track"></span>
+                    </label>
+                </div>
+                <div class="ai-setting-row">
+                    <span>忽略重复组件数量差异</span>
+                    <label class="ai-switch">
+                        <input type="checkbox" data-ai-setting="ignoreQuantity">
+                        <span class="ai-switch-track"></span>
+                    </label>
+                </div>
+                <div class="ai-setting-row">
+                    <span>忽略系统 UI</span>
+                    <label class="ai-switch">
+                        <input type="checkbox" data-ai-setting="ignoreSystemUI">
+                        <span class="ai-switch-track"></span>
+                    </label>
+                </div>
+                <div class="ai-setting-row">
+                    <span>忽略动态图片差异</span>
+                    <label class="ai-switch">
+                        <input type="checkbox" data-ai-setting="ignoreDynamicImages">
+                        <span class="ai-switch-track"></span>
+                    </label>
+                </div>
+                <div class="ai-setting-row">
+                    <span>忽略细微渲染差异</span>
+                    <label class="ai-switch">
+                        <input type="checkbox" data-ai-setting="ignoreRenderNoise">
+                        <span class="ai-switch-track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="ai-analysis-progress" id="ai-analysis-progress" hidden>
+                <span id="ai-progress-text">准备检测</span>
+                <div class="ai-progress-track"><div class="ai-progress-bar" id="ai-progress-bar"></div></div>
+            </div>
+            <div class="ai-analysis-summary" id="ai-analysis-summary" hidden></div>
+            <div class="ai-settings-dirty" id="ai-settings-dirty" hidden>设置已修改，请重新检测后生效</div>
+        </div>
+
+        <div class="ai-panel-actions">
+            <button class="btn-secondary" id="ai-clear" type="button" disabled>清除自动标注</button>
+            <button class="btn-primary" id="ai-rerun" type="button" disabled>重新检测</button>
+        </div>
+    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 标注详情模态框 -->
+    <div class="modal" id="annotation-modal">
+        <div class="modal-content">
+            <h3>编辑标注 #<span id="modal-annotation-id">1</span></h3>
+            <div class="form-group">
+                <textarea id="annotation-desc" rows="4" placeholder="请输入标注内容"></textarea>
+            </div>
+            <div class="modal-actions">
+                <!-- <button id="cancel-annotation" class="btn-secondary">取消</button> -->
+                <button id="delete-annotation" class="btn-secondary">
+                    <i class="icon x"></i>删除
+                </button>
+                <button id="save-annotation" class="btn-primary">
+                    <i class="icon check"></i>保存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增：Toast提示容器 -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- 新增：未保存确认弹窗 -->
+<div class="modal" id="unsaved-modal">
+    <div class="modal-content" style="width: auto; text-align: center;">
+        <h3> 保存确认 </h3>
+        <p style="margin: 0 0 20px 0; color: var(--text-secondary);font-size:14px">当前标注数据有修改，要保存吗？</p>
+        <div class="modal-actions" style="justify-content: center;">
+            <button id="unsaved-cancel" class="btn-secondary" style="width: 98px;">
+                取消
+            </button>
+            <button id="unsaved-discard" class="btn-secondary" style="width: 98px;">
+                <i class="icon x"></i> 不保存
+            </button>
+            <button id="unsaved-save" class="btn-primary" style="width: 98px;">
+                <i class="icon check"></i> 保存
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 新增：清空标注确认弹窗 -->
+<div class="modal" id="clear-annotations-modal">
+    <div class="modal-content" style="width: auto; text-align: center;">
+        <h3>清空确认</h3>
+        <p style="margin: 0 0 20px 0; color: var(--text-secondary); font-size: 14px;">确定要清空所有标注吗？</p>
+        <div class="modal-actions" style="justify-content: center;">
+            <button id="clear-annotations-cancel" class="btn-secondary" style="width: 98px;">
+                取消
+            </button>
+            <button id="clear-annotations-confirm" class="btn-danger" style="width: 98px;">
+                <i class="icon trash"></i> 清空
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 新增：清空历史确认弹窗 -->
+<div class="modal" id="clear-history-modal">
+    <div class="modal-content" style="width: auto; text-align: center;">
+        <h3>清空确认</h3>
+        <p style="margin: 0 0 20px 0; color: var(--text-secondary); font-size: 14px;">清空后所有视检记录将无法恢复，是否继续？</p>
+        <div class="modal-actions" style="justify-content: center;">
+            <button id="clear-history-cancel" class="btn-secondary" style="width: 98px;">
+                取消
+            </button>
+            <button id="clear-history-confirm" class="btn-danger" style="width: 98px;">
+                <i class="icon trash"></i> 清空
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 导出报告命名弹窗 -->
+<div class="modal export-report-modal" id="export-report-modal" aria-hidden="true">
+    <div class="modal-content export-report-modal-content" role="dialog" aria-modal="true"
+         aria-labelledby="export-report-title">
+        <h3 id="export-report-title">导出报告</h3>
+        <input id="export-report-name" class="export-report-name-input" type="text"
+               maxlength="80" autocomplete="off" aria-label="保存的文件名称">
+        <div class="modal-actions export-report-actions">
+            <button id="export-report-cancel" class="btn-secondary" type="button">取消</button>
+            <button id="export-report-confirm" class="btn-primary" type="button">
+                <i class="icon file-type-pdf"></i>导出
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 长截图手动拼接弹窗 -->
+<div class="modal long-screenshot-modal" id="long-screenshot-modal" aria-hidden="true">
+    <div class="modal-content long-screenshot-modal-content" role="dialog" aria-modal="true"
+         aria-labelledby="long-screenshot-modal-title">
+        <div class="long-screenshot-modal-header">
+            <div>
+                <h3 id="long-screenshot-modal-title">调整长截图</h3>
+                <p>自动拼接已裁掉重复像素；如拼接处不准确，可按黄色分割线逐段调整。</p>
+            </div>
+            <button class="long-screenshot-close" id="long-screenshot-close" type="button" aria-label="关闭">
+                <i class="icon x"></i>
+            </button>
+        </div>
+        <div class="long-screenshot-editor">
+            <div class="long-screenshot-preview-shell" id="long-screenshot-preview-shell">
+                <div class="long-screenshot-preview-stage" id="long-screenshot-preview-stage">
+                    <canvas id="long-screenshot-preview-canvas"></canvas>
+                    <div class="long-screenshot-seams-layer" id="long-screenshot-seams-layer"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions long-screenshot-actions">
+            <button class="long-screenshot-auto-btn" id="long-screenshot-auto-arrange" type="button">
+                <i class="icon reload"></i> 重新自动拼接
+            </button>
+            <button id="long-screenshot-cancel" class="btn-secondary" type="button">取消</button>
+            <button id="long-screenshot-apply" class="btn-primary" type="button">
+                <i class="icon check"></i> 应用拼接
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 历史侧边栏遮罩层 -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- 新增：偏移控制浮动菜单 -->
+<div class="floating-status-menu" id="offset-menu" style="display: none;">
+    <div class="offset-slider-container">
+        <input type="range" id="offset-slider" min="-400" max="400" value="0" step="1">
+        <span id="offset-value">0px</span>
+        <div class="slider-scale">
+            <span>-400</span>
+            <span>0</span>
+            <span>+400</span>
+        </div>
+    </div>
+</div>
+
+
+
+</body>
+</html>

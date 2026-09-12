@@ -1,0 +1,798 @@
+/* 历史侧栏、消息提示、浮层菜单、偏移与批量导出 */
+/* ========== 关闭历史栏 ========== */
+.history-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.history-close:hover {
+    background-color: rgba(0,0,0,0.05);
+    color: var(--primary-color);
+}
+
+/* ========== 新增：Toast提示容器 ========== */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.toast {
+    background-color: #333;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: toastIn 0.3s ease;
+    pointer-events: auto;
+    max-width: 300px;
+}
+
+.toast.success {
+    background-color: var(--success-color);
+}
+
+.toast.error {
+    background-color: var(--danger-color);
+}
+
+.toast.info {
+    background-color: var(--primary-color);
+}
+
+.toast i {
+    font-size: 16px;
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ========== 历史侧边栏 ========== */
+.history-sidebar {
+    position: fixed;
+    top: 16px;
+    bottom: 16px;
+    right: 16px;
+    left: -320px;
+    width: 320px;
+    /* height: 100vh; */
+    border-radius: 20px;
+    background-color: var(--sidebar-bg);
+    z-index: 1000;
+    transition: left 0.5s cubic-bezier(0.39, 0.58, 0.57, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.history-sidebar.active {
+    left: 16px; 
+}
+
+/* 修改：主内容区域 - 添加左边距，实现挤压效果 */
+.app-container {
+    display: flex;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    transition: margin-left 0.5s cubic-bezier(0.39, 0.58, 0.57, 1); /* 过渡动画 */
+    margin-left: 0;
+}
+
+/* 当侧边栏激活时，主内容区域向右移动（被挤压） */
+.app-container.sidebar-active {
+    margin-left: 336px; /* 等于侧边栏宽度 */
+}
+
+/* 为了让过渡更平滑，给所有主要内容区域添加过渡 */
+.left-sidebar,
+.main-content,
+.right-sidebar {
+    transition: transform 0.3s ease-out;
+}
+
+/* 可选：添加一个半透明遮罩，增强视觉反馈 */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px) brightness(0.7);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+    pointer-events: none; /* 让点击穿透到页面 */
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto; /* 激活时可以点击关闭 */
+}
+
+/* 历史侧边栏其他样式保持不变 */
+.history-sidebar-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-sidebar-header h3 {
+    margin: 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.history-sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px 16px 16px;
+}
+
+/* 历史记录分组样式 */
+.history-group {
+    margin-bottom: 24px;
+}
+
+.history-group:last-child {
+    margin-bottom: 0;
+}
+
+.history-group-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* 2列宫格布局 */
+.history-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+/* 单个宫格 */
+.history-item {
+    aspect-ratio: 1 / 1;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.history-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+/* 图片容器 */
+.history-item-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.history-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 确保图片填满整个容器，可能会裁剪但保证不留白 */
+    transition: transform 0.3s ease;
+}
+
+.history-item-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 8px 8px 8px; /* 上边距大一些，让渐变更自然 */
+    background: linear-gradient(to top,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.2) 50%,
+    rgba(0, 0, 0, 0) 100%);
+    color: white;
+    z-index: 2;
+    backdrop-filter: blur(2px); /* 毛玻璃效果 */
+}
+
+.history-item-time {
+    font-size: 11px;
+    font-weight: 500;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); /* 添加文字阴影，增强可读性 */
+    letter-spacing: 0.3px;
+}
+
+.history-item-mode {
+    font-size: 10px;
+    color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 删除按钮（hover显示） */
+.history-item-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    z-index: 2;
+    transition: all 0.2s ease;
+}
+
+.history-item-delete i {
+    color: white;
+    Font-size: 14px;
+}
+
+.history-item:hover .history-item-delete {
+    display: flex;
+}
+
+.history-item-delete:hover {
+    transform: scale(1.1);
+}
+
+/* 空状态 */
+.history-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--text-secondary);
+    gap: 12px;
+}
+
+.history-empty i {
+    font-size: 48px;
+    opacity: 0.5;
+}
+
+.history-sidebar-footer {
+    padding: 16px;
+    border-radius: 0px 0px 20px 20px;
+    background-color: var(--sidebar-bg);
+}
+
+/* 加载动画 */
+@keyframes itemFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.history-item {
+    animation: itemFadeIn 0.3s ease;
+}
+
+/* 删除动画 */
+.history-item.deleting {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+}
+
+/* 当前编辑标签样式 */
+.history-item-current-label {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    height: 20px;
+    padding: 0 8px;
+    background-color: #a0ed1e;
+    color: #171717;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 20px;
+    border-radius: 8px; /* 50%圆角 */
+    z-index: 3;
+    letter-spacing: 0.3px;
+}
+
+/* 当前编辑项的边框高亮（可选） */
+.history-item.current-editing {
+    border-color: #a0ed1e;
+    box-shadow: 0 0 0 2px rgba(179, 234, 80, 0.2);
+}
+
+.history-item.current-editing:hover {
+    border-color: #a0ed1e;
+    box-shadow: 0 4px 8px rgba(179, 234, 80, 0.3);
+}
+
+/* 序号触发器 - 确保菜单可以突破容器 */
+.status-trigger {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+}
+
+/* ========== 新增：浮动状态菜单（使用Portal技术） ========== */
+
+/* 浮动菜单容器 - 直接挂在body下 */
+.floating-status-menu {
+    position: fixed;
+    z-index: 1000000;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    width: 120px;
+    padding: 4px 4px;
+    border: 1px solid #eef2f5;
+    
+    /* 动画相关属性 */
+    opacity: 0;
+    transform:  scale(0.95);  /* 初始状态：向上偏移并缩小 */
+    transition: 
+        opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0.2s ease;
+    visibility: hidden;
+    pointer-events: none;
+    
+    /* 设置变换原点为顶部中间，让动画从触发器位置开始 */
+    transform-origin: top left;
+}
+
+.floating-status-menu.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);  /* 最终状态：恢复正常位置和大小 */
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* 菜单项 */
+.floating-status-menu .menu-item {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+}
+
+.floating-status-menu .menu-item:hover {
+    background-color: #f5f7fa;
+}
+
+/* 菜单圆点 */
+.floating-status-menu .menu-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+
+.floating-status-menu .menu-dot.pending {
+    background-color: #ff4444;
+}
+
+.floating-status-menu .menu-dot.keep {
+    background-color: #f5a623;
+}
+
+.floating-status-menu .menu-dot.fixed {
+    background-color: #80c808;
+}
+
+/* 菜单文字 */
+.floating-status-menu .menu-text {
+    font-size: 13px;
+    color: #171717;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+/* 当菜单打开时，添加一个全屏透明遮罩 */
+body.menu-open::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999999;
+    background: transparent;
+    pointer-events: auto;
+}
+
+/* ========== 新增：偏移功能样式 ========== */
+
+/* 偏移菜单 - 完全复用 floating-status-menu 的动画效果 */
+#offset-menu.floating-status-menu {
+    display: none;
+    position: fixed;
+    z-index: 1000000;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    width: 78px;
+    padding: 16px 0;
+    border: 1px solid #eef2f5;
+    
+    /* 动画相关属性 - 与 floating-status-menu 完全一致 */
+    opacity: 0;
+    transform: scale(0.95);
+    transition: 
+        opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0.2s ease;
+    visibility: hidden;
+    pointer-events: none;
+    
+    /* 变换原点：根据菜单位置动态调整 */
+    transform-origin: bottom right;
+}
+
+/* 激活状态 - 与 floating-status-menu 完全一致 */
+#offset-menu.floating-status-menu.active {
+    opacity: 1;
+    transform: scale(1);
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* 当菜单在下方显示时的变换原点 */
+#offset-menu.floating-status-menu.position-bottom {
+    transform-origin: top right;
+}
+
+/* 偏移滑块容器 - 高度自适应 */
+.offset-slider-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    height: auto;  /* 高度自适应 */
+    min-height: auto;
+}
+
+/* 垂直滑块 - 使用旋转方案，高度改为140px */
+#offset-slider {
+    width: 140px;  /* 改为140px */
+    height: 6px;
+    -webkit-appearance: none;
+    background: linear-gradient(to right, var(--primary-color) 0%, var(--primary-color) 50%, var(--border-color) 50%, var(--border-color) 100%);
+    border-radius: 3px;
+    outline: none;
+    transform: rotate(90deg);
+    margin: 67px 0;  /* (140-6)/2 ≈ 67px，使滑块垂直居中 */
+    cursor: pointer;
+    position: relative;
+    z-index: 1000001;
+}
+
+#offset-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+#offset-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    background: var(--primary-hover);
+}
+
+/* Firefox 支持 */
+#offset-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+#offset-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    background: var(--primary-hover);
+}
+
+#offset-slider::-moz-range-track {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+/* 偏移值显示 */
+#offset-value {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    display: block;
+    font-weight: 400;
+    background-color: #f5f7fa;
+    padding: 4px 12px;
+    border-radius: 16px;
+    z-index: 1000001;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#offset-value:hover {
+    background-color: #e8ecf1;
+    transition: all 0.2s ease;
+}
+
+/* 移除滑块刻度相关样式 */
+.slider-scale {
+    display: none;  /* 隐藏刻度 */
+}
+
+/* 偏移按钮激活状态 */
+#offset-toggle.active {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .app-container {
+        flex-direction: row;
+    }
+
+    .right-sidebar {
+        width: clamp(220px, 26vw, 300px);
+        height: 100%;
+        min-height: 0;
+        flex: 0 0 clamp(220px, 26vw, 300px);
+    }
+
+    .left-sidebar {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .upload-module, .control-module {
+        min-width: 300px;
+    }
+
+    .main-content {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        padding: 12px 0 12px 12px;
+    }
+}
+
+/* iPad 竖屏：主视检区优先显示，标注列表压缩到底部。 */
+@media (max-width: 820px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .main-content {
+        order: 1;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        padding: 8px;
+    }
+
+    .right-sidebar {
+        order: 2;
+        width: 100%;
+        height: 160px;
+        min-height: 0;
+        flex: 0 0 160px;
+    }
+
+    .annotations-list {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 10px 68px 10px 10px;
+        gap: 10px;
+    }
+
+    .annotation-item {
+        min-width: 260px;
+        height: 100%;
+        overflow-y: auto;
+    }
+}
+
+/* ========== 批量导出功能样式 ========== */
+
+/* 导出按钮样式 */
+#batch-export-btn {
+    width: auto;
+    Padding:0 8px;
+    height: 28px;
+    border: none;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-right: auto;
+}
+
+#batch-export-btn:hover {
+    transform: scale(1.04);
+}
+
+#batch-export-btn.cancel-mode {
+    background: var(--danger-color);
+}
+
+#batch-export-btn.cancel-mode:hover {
+    background: #ff4444;
+}
+
+/* 选择模式下的复选框 */
+.history-item-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 5;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.history-item-checkbox.visible {
+    display: flex;
+}
+
+.history-item-checkbox.checked {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.history-item-checkbox i {
+    color: white;
+    font-size: 16px;
+    display: none;
+}
+
+.history-item-checkbox.checked i {
+    display: block;
+}
+
+/* 底部导出按钮区域 */
+.history-sidebar-footer .batch-export-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.history-sidebar-footer .batch-export-actions button {
+    flex: 1;
+    height: 44px;
+    border: none;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+#batch-export-pdf {
+    background-color: #a0ed1e;
+    color: #171717;
+}
+
+#batch-export-pdf:hover:not(:disabled) {
+    background-color: #8eda0d;
+    transform: translateY(-1px);
+    color: #171717;
+}
+
+#batch-export-pdf:disabled {
+    background-color: var(--border-color);
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+#batch-export-cancel {
+    background-color: var(--primary-color);
+    color: #FFF;
+}
+
+#batch-export-cancel:hover {
+    background-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+/* 多选计数标签 */
+.batch-select-count {
+    font-size: 12px;
+    color: var(--primary-color);
+    font-weight: 500;
+}

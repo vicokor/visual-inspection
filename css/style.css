@@ -1,0 +1,10 @@
+/**
+ * 样式统一入口
+ * 模块加载顺序与原单文件规则顺序一致，避免层叠优先级发生变化。
+ */
+@import url("./base.css");
+@import url("./inspection.css");
+@import url("./panels.css");
+@import url("./controls.css");
+@import url("./ai-inspection.css");
+@import url("./long-screenshot.css");

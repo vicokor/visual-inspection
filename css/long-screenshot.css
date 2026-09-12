@@ -1,0 +1,347 @@
+/* 长截图上传入口 */
+.long-screenshot-upload-option {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px solid #d9deea;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-secondary);
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    z-index: 3;
+    box-shadow: 0 3px 12px rgba(18, 32, 63, 0.06);
+}
+
+.long-screenshot-upload-option.compact {
+    position: static;
+    transform: none;
+    margin-top: 10px;
+    flex-shrink: 0;
+}
+
+.long-screenshot-upload-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.long-screenshot-checkbox {
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid #a9b3c8;
+    border-radius: 5px;
+    background: #fff;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.18s ease;
+}
+
+.long-screenshot-upload-option input:checked + .long-screenshot-checkbox {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+}
+
+.long-screenshot-upload-option input:checked + .long-screenshot-checkbox::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    clip-path: polygon(5% 48%, 0 62%, 38% 98%, 100% 18%, 86% 6%, 37% 72%);
+    transform: translate(-50%, -50%);
+}
+
+.long-screenshot-upload-option:has(input:checked) {
+    color: var(--primary-color);
+    border-color: rgba(52, 111, 230, 0.28);
+    background: #f3f7ff;
+}
+
+/* 开发图下方居中的调整入口 */
+.long-screenshot-adjust-btn {
+    position: absolute;
+    z-index: 20;
+    height: 30px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 999px;
+    background: #a0ed1e;
+    color: #171717;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transform: translateX(-50%);
+    transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+/* Author styles must not override the native hidden attribute. */
+.long-screenshot-adjust-btn[hidden] {
+    display: none !important;
+}
+
+.long-screenshot-adjust-btn:hover {
+    background: #8eda0d;
+    transform: translate(-50%, -1px);
+}
+
+.long-screenshot-adjust-btn i {
+    margin: 0;
+    line-height: 1;
+}
+
+/* 手动拼接弹窗 */
+.long-screenshot-modal {
+    z-index: 1200;
+}
+
+.long-screenshot-modal-content {
+    width: min(900px, calc(100vw - 48px));
+    max-width: 900px;
+    height: min(860px, calc(100vh - 48px));
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.long-screenshot-modal-header {
+    min-height: 74px;
+    padding: 18px 20px;
+    border-bottom: 1px solid #edf0f5;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.long-screenshot-modal-header h3 {
+    margin: 0 0 5px;
+    font-size: 17px;
+}
+
+.long-screenshot-modal-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.long-screenshot-close {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 12px;
+    background: #f4f6f9;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.long-screenshot-editor {
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    background: #f5f7fa;
+}
+
+.long-screenshot-preview-shell {
+    min-width: 0;
+    flex: 1;
+    overflow: auto;
+    padding: 24px;
+    background-color: #e8ecf2;
+    background-image:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.55) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.55) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.55) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.55) 75%);
+    background-size: 24px 24px;
+    background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+}
+
+.long-screenshot-preview-stage {
+    position: relative;
+    margin: 0 auto;
+    background: #fff;
+    box-shadow: 0 10px 34px rgba(18, 32, 63, 0.18);
+    will-change: margin-top, margin-bottom;
+}
+
+#long-screenshot-preview-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    cursor: default;
+    touch-action: pan-x pan-y;
+}
+
+#long-screenshot-preview-canvas.is-adjusting {
+    cursor: ns-resize;
+    touch-action: none;
+}
+
+.long-screenshot-seams-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.long-screenshot-seam {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    pointer-events: none;
+}
+
+.long-screenshot-seam-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: #f6c54b;
+    box-shadow: 0 0 0 0.5px rgba(139, 92, 0, 0.14);
+}
+
+.long-screenshot-seam.active .long-screenshot-seam-line {
+    height: 2px;
+}
+
+.long-screenshot-seam-button {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 78px;
+    height: 32px;
+    border: 0;
+    border-radius: 999px;
+    background: #f8c84f;
+    color: #704c08;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    pointer-events: auto;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 4px 12px rgba(126, 82, 0, 0.18);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.long-screenshot-seam-button:hover {
+    background: #f4bb2e;
+    transform: translate(-50%, -50%) scale(1.04);
+}
+
+.long-screenshot-seam.active .long-screenshot-seam-button,
+.long-screenshot-seam.confirmed .long-screenshot-seam-button {
+    color: #694603;
+}
+
+.long-screenshot-direction {
+    position: absolute;
+    left: 50%;
+    color: #f3bd34;
+    font-size: 29px;
+    line-height: 1;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 1px 1px rgba(126, 82, 0, 0.12));
+}
+
+.long-screenshot-direction.upper {
+    bottom: 44px;
+}
+
+.long-screenshot-direction.lower {
+    top: 44px;
+}
+
+.long-screenshot-actions {
+    min-height: 68px;
+    padding: 12px 20px;
+    border-top: 1px solid #edf0f5;
+    align-items: center;
+    gap: 10px;
+}
+
+.long-screenshot-actions .btn-secondary,
+.long-screenshot-actions .btn-primary {
+    width: 112px;
+    flex-shrink: 0;
+}
+
+.long-screenshot-auto-btn {
+    width: auto;
+    height: 34px;
+    padding: 0 9px;
+    margin-right: auto;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.long-screenshot-auto-btn i {
+    margin: 0;
+    line-height: 1;
+}
+
+.long-screenshot-auto-btn:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: #eef1f5;
+}
+
+.long-screenshot-auto-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 820px) {
+    .long-screenshot-modal-content {
+        width: calc(100vw - 24px);
+        height: calc(100vh - 24px);
+    }
+
+    .long-screenshot-preview-shell {
+        padding: 16px;
+    }
+
+    .long-screenshot-actions {
+        flex-wrap: wrap;
+    }
+
+    .long-screenshot-auto-btn {
+        margin-right: auto;
+    }
+}
